@@ -8,7 +8,7 @@ const useAPIProducts  = () => {
 	 * Endpoints calls
 	 */
 	const getAllProducts = useCallback(
-		async (field: string, filter: string): Promise<any> => {
+		async (field: string, filter: string | null): Promise<any> => {
 			try {
                 const { status, data } = await endpoints.getAllProducts(
                     field,

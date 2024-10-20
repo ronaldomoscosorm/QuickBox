@@ -7,7 +7,7 @@ Api = axios.create({
 	baseURL: 'https://api.rmtecho.com.br/api',
 });
 
-const getAllProducts = (field: string, filter: string) =>
+const getAllProducts = (field: string, filter: string | null) =>
 	Api.get<BSAnswerAllProducts>('/QuickBox/GetProdutos/' + field + '/' + filter);
 
 const saveProduct = (
