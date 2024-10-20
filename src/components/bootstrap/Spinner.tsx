@@ -18,7 +18,7 @@ const useStyles = createUseStyles({
 interface ISpinnerProps {
 	children?: ReactNode;
 	tag?: 'div' | 'span';
-	color?: TColor | null;
+	color?: TColor | null | string;
 	isGrow?: boolean;
 	isSmall?: boolean;
 	size?: string | number | null;
