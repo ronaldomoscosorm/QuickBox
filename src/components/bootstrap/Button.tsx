@@ -79,7 +79,7 @@ export interface IButtonProps
 	to?: string | undefined;
 	href?: string | undefined;
 	isActive?: boolean;
-	color?: TColor | 'link' | 'brand' | 'brand-two' | 'storybook';
+	color?: TColor | 'link' | 'brand' | 'brand-two' | 'storybook' | string;
 	isOutline?: boolean;
 	isLight?: boolean;
 	isLink?: boolean;
