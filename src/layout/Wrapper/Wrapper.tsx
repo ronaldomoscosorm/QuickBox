@@ -38,9 +38,9 @@ const Wrapper = () => {
 	return (
 		<>
 			<WrapperContainer>
-				<HeaderRoutes />
+				{/* <HeaderRoutes /> */}
 				<Content />
-				<FooterRoutes />
+				{/* <FooterRoutes /> */}
 			</WrapperContainer>
 			<WrapperOverlay />
 		</>
