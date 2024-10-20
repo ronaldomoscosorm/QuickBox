@@ -39,7 +39,8 @@ export default function RegisterProduct() {
 		alertMessage: '',
 		alertOpen: false,
 	});
-	const [allProducts, setAllproducts] = useState<IList[]>([]);
+	const [productsListInput, setProductsListInput] = useState<IList[]>([]);
+	const [allProducts, setAllProducts] = useState<BSProductsInfo[]>([]);
 	const [isLoadingAllProducts, setIsLoadingAllProducts] = useState<boolean>(false);
 	const [product, setProduct] = useState<BSProductsInfo>(new BSProductsInfo());
 	const [selectedProduct, setSelectedProduct] = useState<string>('');
@@ -62,11 +63,12 @@ export default function RegisterProduct() {
 						const resData = res.Data;
 
 						if (resData) {
+							setAllProducts(resData);
 							const products = resData.map((item: BSProductsInfo) => ({
 								text: item.cmpDcProduto,
 								value: item.cmpCoProduto.toString(),
 							}));
-							setAllproducts(products);
+							setProductsListInput(products);
 						}
 					} else {
 						console.error('Error (fetchAuthorizers): ', res.Message);
@@ -250,12 +252,12 @@ export default function RegisterProduct() {
 											placeholder='Digite o nome do produto'
 											size='lg'
 											type='input'
-											list={allProducts}
+											list={productsListInput}
 											value={selectedProduct}
 											minCharacters={4}
 											noOptionsMessage='Produto não encontrado!'
 											onChange={(e: string) => {
-												const isOptionSelected = allProducts.some(
+												const isOptionSelected = productsListInput.some(
 													(product) => product.text === e,
 												);
 
@@ -267,15 +269,37 @@ export default function RegisterProduct() {
 
 												if (isOptionSelected) {
 													const prdid = findValueByField(
-														allProducts,
+														productsListInput,
 														e,
 														'value',
 														'text',
 													);
 
-													console.log(prdid);
+													const product = allProducts.find(
+														(item) =>
+															item.cmpCoProduto === parseInt(prdid),
+													);
+													if (product) {
+														formik.setFieldValue(
+															'prdCode',
+															product.cmpCoProduto.toString(),
+														);
+														formik.setFieldValue(
+															'prdDesciption',
+															product.cmpDcProduto,
+														);
+														formik.setFieldValue(
+															'prdAmount',
+															product.cmpVlQuantidade.toString(),
+														);
+														formik.setFieldValue(
+															'prdPrice',
+															product.cmpVlPreco.toString(),
+														);
+													}
 												} else {
 													formik.setFieldValue('prdName', '');
+													formik.setFieldValue('prdCode', '');
 												}
 											}}
 											onBlur={formik.handleBlur}
@@ -297,6 +321,7 @@ export default function RegisterProduct() {
 											placeholder='Digite o código do produto'
 											onChange={formik.handleChange}
 											onBlur={formik.handleBlur}
+											value={formik.values.prdCode}
 											isValid={formik.isValid}
 											isTouched={formik.touched.prdCode}
 											invalidFeedback={formik.errors.prdCode}
