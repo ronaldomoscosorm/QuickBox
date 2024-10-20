@@ -31,11 +31,11 @@ const ListOption = ({ children, value, onClick, isSelected, ariaLabelledby }: IL
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 			className={classNames('ps-3 cursor-default bg-lightGrayFacit', {
-				'text-white': isSelected || isHovered,
+				'text-black': isSelected || isHovered,
 				'bg-autocompleteOptionsHoverBg': isSelected || isHovered,
 				'text-brand-two': !isSelected && !isHovered,
 			})}
-			style={{ paddingTop: '5px', paddingRight: '2px', paddingBottom: '5px' }}>
+			style={{ padding: '5px 2px 5px 0px' }}>
 			<span style={{ pointerEvents: 'none', fontSize: '1.2rem' }} className='fw-normal'>
 				{children}
 			</span>
@@ -225,7 +225,7 @@ const Autocomplete = forwardRef<HTMLInputElement, IInputProps>(
 							className='p-2 rounded rounded-1 border'
 							style={{ boxShadow: '0 1rem 3rem rgba(0, 0, 0, 0.3)' }}>
 							<span
-								style={{ pointerEvents: 'none', fontSize: '0.875rem' }}
+								style={{ pointerEvents: 'none', fontSize: '1.2rem', padding: '5px 2px 5px 0px' }}
 								className='fw-normal text-brand-two'>
 								{noOptionsMessage}
 							</span>
