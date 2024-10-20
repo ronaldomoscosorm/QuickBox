@@ -23,7 +23,7 @@ const appPages: RouteProps[] = [
 	 * Register products
 	 */
 	{
-		path: '/register',
+		path: '/cadastro-produtos',
 		element: <REGISTER.REGISTER />,
 	},
 ];
