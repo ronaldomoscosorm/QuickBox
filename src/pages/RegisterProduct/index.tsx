@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Breadcrumb from '../../components/bootstrap/Breadcrumb';
 import PageWrapper from '../../layout/PageWrapper/PageWrapper';
 import SubHeader, { SubHeaderLeft } from '../../layout/SubHeader/SubHeader';
@@ -9,6 +9,11 @@ import Label from '../../components/bootstrap/forms/Label';
 import Input from '../../components/bootstrap/forms/Input';
 import { useFormik } from 'formik';
 import Button from '../../components/bootstrap/Button';
+import useAPIProducts from '../../hooks/useAPIProducts';
+import { AxiosError } from 'axios';
+import { BSAnswer, BSAnswerAllProducts, BSProductsInfo } from '../../classes/BSAnswer';
+import { IList } from '../../type/interfaces/IList';
+import { IAlertData } from '../../type/interfaces/IAlert';
 
 export default function RegisterProduct() {
 	/**
@@ -21,16 +26,82 @@ export default function RegisterProduct() {
 	// const pageConfig = config.stylesConfig[2];
 	const registerText = 'Cadastro de produtos';
 	const registerPath = '/cadastro-produtos';
+
+	const { getAllProducts, saveProduct } = useAPIProducts();
+
+	const [alertData, setAlertData] = useState<IAlertData>({
+		alertColor: undefined,
+		alertIcon: '',
+		alertMessage: '',
+		alertOpen: false,
+	});
+	const [allProducts, setAllproducts] = useState<IList[]>([]);
+	const [product, setProduct] = useState<BSProductsInfo>(new BSProductsInfo());
+
+	const fetchAlProducts = async(field: string, filter: string) => {
+		try {
+			const requestData = await getAllProducts(field, filter);
+
+			if (requestData instanceof AxiosError) {
+				const error = requestData.response?.data.Message
+					? requestData.response?.data.Message
+					: requestData.message;
+				console.log('Erro (fetchAuthorizers): ', error);
+			} else {
+				if (requestData) {
+					const res = requestData as BSAnswerAllProducts;
+
+					if (res.Code === '0') {
+						const resData = res.Data;
+
+						if (resData) {
+							const products = resData.map((item: BSProductsInfo) => ({
+								text: item.cmpDcProduto,
+								value: item.cmpCoProduto.toString(),
+							}));
+							setAllproducts(products);
+						}
+					} else {
+						console.error('Error (fetchAuthorizers): ', res.Message);
+					}
+				}
+			}
+			
+		} catch (error) {
+			
+		}
+	}	
+
 	/**
 	 * Formik
 	 */
-	const formik = useFormik({
-		initialValues: {
-			prdCode: '',
+	 const handleReset = (submitButton: boolean) => {
+		formik.resetForm();
+
+		formik.setValues({
+			prdCode: 0,
 			prdName: '',
 			prdDesciption: '',
-			prdAmount: '',
-			prdprice: '',
+			prdAmount: 0,
+			prdPrice: 0,
+		});
+
+		if (!submitButton) {
+			setAlertData({
+				alertColor: undefined,
+				alertIcon: '',
+				alertMessage: '',
+				alertOpen: false,
+			});
+		}
+	};
+	const formik = useFormik({
+		initialValues: {
+			prdCode: 0,
+			prdName: '',
+			prdDesciption: '',
+			prdAmount: 0,
+			prdPrice: 0,
 		},
 		validate: (values) => {
 			const errors: {
@@ -38,7 +109,7 @@ export default function RegisterProduct() {
 				prdName?: string;
 				prdDesciption?: string;
 				prdAmount?: string;
-				prdprice?: string;
+				prdPrice?: string;
 			} = {};
 
 			if (!values.prdCode) {
@@ -53,14 +124,79 @@ export default function RegisterProduct() {
 			if (!values.prdAmount) {
 				errors.prdAmount = 'Campo obrigatório';
 			}
-			if (!values.prdprice) {
-				errors.prdprice = 'Campo obrigatório';
+			if (!values.prdPrice) {
+				errors.prdPrice = 'Campo obrigatório';
 			}
 
 			return errors;
 		},
 		onSubmit: async (values) => {
 			console.log(values);
+
+			product.cmpCoProduto = values.prdCode;
+			product.cmpDcProduto = values.prdName;
+			product.cmpVlQuantidade = values.prdAmount;
+			product.cmpVlPreco = values.prdPrice;
+
+			try {
+				const requestData = await saveProduct(product);
+
+				if (requestData instanceof AxiosError) {
+					const error = requestData.response?.data.Message
+						? requestData.response?.data.Message
+						: 'Erro ao salvar produto! Por favor, tente novamente mais tarde!';
+					setAlertData({
+						alertColor: 'danger',
+						alertIcon: 'Report',
+						alertMessage: error,
+						alertOpen: true,
+					});
+				} else {
+					if (requestData) {
+						const res = requestData as BSAnswer;
+
+						if (res?.Code === '0') {
+							setAlertData({
+								alertColor: 'success',
+								alertIcon: 'CheckCircle',
+								alertMessage: 'Produto salvo com sucesso!',
+								alertOpen: true,
+							});
+
+							// Resets form right after data is saved
+							handleReset(true);
+						}
+						else {
+							setAlertData({
+								alertColor: 'danger',
+								alertIcon: 'Report',
+								alertMessage: res.Message,
+								alertOpen: true,
+							});
+						}
+					} else {
+						setAlertData({
+							alertColor: 'danger',
+							alertIcon: 'Report',
+							alertMessage:
+								'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
+							alertOpen: true,
+						});
+					}
+				}
+			} catch (error) {
+				setAlertData({
+					alertColor: 'danger',
+					alertIcon: 'Report',
+					alertMessage:
+						'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
+					alertOpen: true,
+				});
+				console.log(error);
+			} finally {
+				// setIsLoadingPage(false);
+			}
+
 		},
 	});
 	return (
@@ -161,21 +297,21 @@ export default function RegisterProduct() {
 									</FormGroup>
 									<FormGroup className='col-lg-12 col-md-12 mt-3'>
 										<Label
-											htmlFor='prdprice'
+											htmlFor='prdPrice'
 											className='text-mediumGrayRM-white'
 											style={{ fontWeight: '600', fontSize: '1.3em' }}>
 											Preço
 										</Label>
 										<Input
-											id='prdprice'
+											id='prdPrice'
 											size='lg'
 											placeholder='Digite o preço do produto'
 											onChange={formik.handleChange}
 											onBlur={formik.handleBlur}
-											value={formik.values.prdprice}
+											value={formik.values.prdPrice}
 											isValid={formik.isValid}
-											isTouched={formik.touched.prdprice}
-											invalidFeedback={formik.errors.prdprice}
+											isTouched={formik.touched.prdPrice}
+											invalidFeedback={formik.errors.prdPrice}
 										/>
 									</FormGroup>
 								</div>
