@@ -1,19 +1,22 @@
-import { useRef, useState } from 'react';
+import { AxiosError } from 'axios';
+import { useFormik } from 'formik';
+import { useEffect, useRef, useState } from 'react';
+import { BSAnswer, BSAnswerAllProducts, BSProductsInfo } from '../../classes/BSAnswer';
 import Breadcrumb from '../../components/bootstrap/Breadcrumb';
-import PageWrapper from '../../layout/PageWrapper/PageWrapper';
-import SubHeader, { SubHeaderLeft } from '../../layout/SubHeader/SubHeader';
-import Page from '../../layout/Page/Page';
+import Button from '../../components/bootstrap/Button';
 import Card, { CardBody, CardHeader, CardLabel, CardTitle } from '../../components/bootstrap/Card';
 import FormGroup from '../../components/bootstrap/forms/FormGroup';
-import Label from '../../components/bootstrap/forms/Label';
 import Input from '../../components/bootstrap/forms/Input';
-import { useFormik } from 'formik';
-import Button from '../../components/bootstrap/Button';
+import Label from '../../components/bootstrap/forms/Label';
+import Spinner from '../../components/bootstrap/Spinner';
+import Autocomplete from '../../components/custom/Autocomplete';
 import useAPIProducts from '../../hooks/useAPIProducts';
-import { AxiosError } from 'axios';
-import { BSAnswer, BSAnswerAllProducts, BSProductsInfo } from '../../classes/BSAnswer';
-import { IList } from '../../type/interfaces/IList';
+import Page from '../../layout/Page/Page';
+import PageWrapper from '../../layout/PageWrapper/PageWrapper';
+import SubHeader, { SubHeaderLeft } from '../../layout/SubHeader/SubHeader';
 import { IAlertData } from '../../type/interfaces/IAlert';
+import { IList } from '../../type/interfaces/IList';
+import functions from '../../utils/functions';
 
 export default function RegisterProduct() {
 	/**
@@ -28,6 +31,7 @@ export default function RegisterProduct() {
 	const registerPath = '/cadastro-produtos';
 
 	const { getAllProducts, saveProduct } = useAPIProducts();
+	const { findValueByField } = functions();
 
 	const [alertData, setAlertData] = useState<IAlertData>({
 		alertColor: undefined,
@@ -36,10 +40,13 @@ export default function RegisterProduct() {
 		alertOpen: false,
 	});
 	const [allProducts, setAllproducts] = useState<IList[]>([]);
+	const [isLoadingAllProducts, setIsLoadingAllProducts] = useState<boolean>(false);
 	const [product, setProduct] = useState<BSProductsInfo>(new BSProductsInfo());
+	const [selectedProduct, setSelectedProduct] = useState<string>('');
 
-	const fetchAlProducts = async(field: string, filter: string) => {
+	const fetchAlProducts = async (field: string, filter: string | null) => {
 		try {
+			setIsLoadingAllProducts(true);
 			const requestData = await getAllProducts(field, filter);
 
 			if (requestData instanceof AxiosError) {
@@ -66,24 +73,32 @@ export default function RegisterProduct() {
 					}
 				}
 			}
-			
 		} catch (error) {
-			
+			console.error('Error (fetchAuthorizers): ', error);
+		} finally {
+			setIsLoadingAllProducts(false);
 		}
-	}	
+	};
+
+	/**
+	 * UseEffects
+	 */
+	useEffect(() => {
+		fetchAlProducts('geral', null);
+	}, []);
 
 	/**
 	 * Formik
 	 */
-	 const handleReset = (submitButton: boolean) => {
+	const handleReset = (submitButton: boolean) => {
 		formik.resetForm();
 
 		formik.setValues({
-			prdCode: 0,
+			prdCode: '',
 			prdName: '',
 			prdDesciption: '',
-			prdAmount: 0,
-			prdPrice: 0,
+			prdAmount: '',
+			prdPrice: '',
 		});
 
 		if (!submitButton) {
@@ -97,11 +112,11 @@ export default function RegisterProduct() {
 	};
 	const formik = useFormik({
 		initialValues: {
-			prdCode: 0,
+			prdCode: '',
 			prdName: '',
 			prdDesciption: '',
-			prdAmount: 0,
-			prdPrice: 0,
+			prdAmount: '',
+			prdPrice: '',
 		},
 		validate: (values) => {
 			const errors: {
@@ -133,10 +148,10 @@ export default function RegisterProduct() {
 		onSubmit: async (values) => {
 			console.log(values);
 
-			product.cmpCoProduto = values.prdCode;
+			product.cmpCoProduto = parseInt(values.prdCode);
 			product.cmpDcProduto = values.prdName;
-			product.cmpVlQuantidade = values.prdAmount;
-			product.cmpVlPreco = values.prdPrice;
+			product.cmpVlQuantidade = parseInt(values.prdAmount);
+			product.cmpVlPreco = parseFloat(values.prdPrice);
 
 			try {
 				const requestData = await saveProduct(product);
@@ -165,8 +180,7 @@ export default function RegisterProduct() {
 
 							// Resets form right after data is saved
 							handleReset(true);
-						}
-						else {
+						} else {
 							setAlertData({
 								alertColor: 'danger',
 								alertIcon: 'Report',
@@ -188,17 +202,16 @@ export default function RegisterProduct() {
 				setAlertData({
 					alertColor: 'danger',
 					alertIcon: 'Report',
-					alertMessage:
-						'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
+					alertMessage: 'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
 					alertOpen: true,
 				});
 				console.log(error);
 			} finally {
 				// setIsLoadingPage(false);
 			}
-
 		},
 	});
+
 	return (
 		<PageWrapper title={'Cadastro de Produtos'} ref={alertRef}>
 			<SubHeader className='mt-3'>
@@ -221,6 +234,58 @@ export default function RegisterProduct() {
 								<div className='row'>
 									<FormGroup className='col-lg-12 col-md-12'>
 										<Label
+											htmlFor='prdName'
+											className='text-mediumGrayRM-white'
+											style={{ fontWeight: '600', fontSize: '1.3em' }}>
+											Nome
+										</Label>
+										<div className='ms-2'>
+											{isLoadingAllProducts && (
+												<Spinner isSmall color='femsaRed' />
+											)}
+										</div>
+										<Autocomplete
+											id='prdName'
+											aria-label='prdName'
+											placeholder='Digite o nome do produto'
+											size='lg'
+											type='input'
+											list={allProducts}
+											value={selectedProduct}
+											minCharacters={4}
+											noOptionsMessage='Produto não encontrado!'
+											onChange={(e: string) => {
+												const isOptionSelected = allProducts.some(
+													(product) => product.text === e,
+												);
+
+												setSelectedProduct(e);
+												if (e.length === 4) {
+													fetchAlProducts('geral', e);
+												}
+												formik.setFieldValue('prdName', e);
+
+												if (isOptionSelected) {
+													const prdid = findValueByField(
+														allProducts,
+														e,
+														'value',
+														'text',
+													);
+
+													console.log(prdid);
+												} else {
+													formik.setFieldValue('prdName', '');
+												}
+											}}
+											onBlur={formik.handleBlur}
+											isValid={formik.isValid}
+											isTouched={formik.touched.prdName}
+											invalidFeedback={formik.errors.prdName}
+										/>
+									</FormGroup>
+									<FormGroup className='col-lg-12 col-md-12 mt-3'>
+										<Label
 											htmlFor='prdCode'
 											className='text-mediumGrayRM-white'
 											style={{ fontWeight: '600', fontSize: '1.3em' }}>
@@ -232,31 +297,12 @@ export default function RegisterProduct() {
 											placeholder='Digite o código do produto'
 											onChange={formik.handleChange}
 											onBlur={formik.handleBlur}
-											value={formik.values.prdCode}
 											isValid={formik.isValid}
 											isTouched={formik.touched.prdCode}
 											invalidFeedback={formik.errors.prdCode}
 										/>
 									</FormGroup>
-									<FormGroup className='col-lg-12 col-md-12 mt-3'>
-										<Label
-											htmlFor='prdName'
-											className='text-mediumGrayRM-white'
-											style={{ fontWeight: '600', fontSize: '1.3em' }}>
-											Nome
-										</Label>
-										<Input
-											id='prdName'
-											size='lg'
-											placeholder='Digite o nome do produto'
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-											value={formik.values.prdName}
-											isValid={formik.isValid}
-											isTouched={formik.touched.prdName}
-											invalidFeedback={formik.errors.prdName}
-										/>
-									</FormGroup>
+
 									<FormGroup className='col-lg-12 col-md-12 mt-3'>
 										<Label
 											htmlFor='prdDesciption'
