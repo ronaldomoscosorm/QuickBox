@@ -300,6 +300,9 @@ export default function RegisterProduct() {
 												} else {
 													formik.setFieldValue('prdName', '');
 													formik.setFieldValue('prdCode', '');
+													formik.setFieldValue('prdDesciption', '');
+													formik.setFieldValue('prdAmount', '');
+													formik.setFieldValue('prdPrice', '');
 												}
 											}}
 											onBlur={formik.handleBlur}
