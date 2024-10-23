@@ -25,7 +25,7 @@ export class BSProductsInfo {
 		this.cmpCoCategoria = 0;
 		this.cmpInStatus = 0;
 		this.cmpDcProduto = '';
-        this.cmpVlPreco = 0;
+		this.cmpVlPreco = 0;
 		this.cmpVlQuantidade = 0;
 		this.cmpDcCategoria = '';
 		this.cmpBlProduto = '';
@@ -37,6 +37,28 @@ export class BSAnswerAllProducts {
 	Message: string;
 	Total: number;
 	Data: BSProductsInfo[];
+	constructor() {
+		this.Code = '';
+		this.Message = '';
+		this.Total = 0;
+		this.Data = [];
+	}
+}
+
+export class BSCategoriesInfo {
+	cmpCoCategoria: number;
+	cmpDcCategoria: string;
+	constructor() {
+		this.cmpCoCategoria = 0;
+		this.cmpDcCategoria = '';
+	}
+}
+
+export class BSAnswerAllCategories {
+	Code: string;
+	Message: string;
+	Total: number;
+	Data: BSCategoriesInfo[];
 	constructor() {
 		this.Code = '';
 		this.Message = '';

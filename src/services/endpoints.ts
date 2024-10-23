@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { BSAnswerAllProducts, BSProductsInfo } from '../classes/BSAnswer';
+import { BSAnswerAllCategories, BSAnswerAllProducts, BSProductsInfo } from '../classes/BSAnswer';
 
 let Api: AxiosInstance;
 
@@ -9,6 +9,9 @@ Api = axios.create({
 
 const getAllProducts = (field: string, filter: string | null) =>
 	Api.get<BSAnswerAllProducts>('/QuickBox/GetProdutos/' + field + '/' + filter);
+
+const getAllCategories = (field: string, filter: string | null) =>
+	Api.get<BSAnswerAllCategories>('/QuickBox/GetCategorias/' + field + '/' + filter);
 
 const saveProduct = (
 	body: BSProductsInfo
@@ -23,6 +26,7 @@ const saveProduct = (
 const endpoints = {
 	getAllProducts,
 	saveProduct,
+	getAllCategories,
 };
 
 export default endpoints;
