@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { BSAnswerAllCategories, BSAnswerAllProducts, BSProductsInfo } from '../classes/BSAnswer';
+import { BSAnswerAllCategories, BSAnswerAllProducts, BSCategoriesInfo, BSProductsInfo } from '../classes/BSAnswer';
 
 let Api: AxiosInstance;
 
@@ -22,11 +22,21 @@ const saveProduct = (
 		},
 	});
 
+const saveCategory = (
+	body: BSCategoriesInfo
+) =>
+	Api.post('/QuickBox/SaveCategorias/', JSON.stringify(body), {
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	});
+
 
 const endpoints = {
 	getAllProducts,
 	saveProduct,
 	getAllCategories,
+	saveCategory,
 };
 
 export default endpoints;
