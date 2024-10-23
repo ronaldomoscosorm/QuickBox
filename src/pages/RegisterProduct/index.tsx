@@ -54,15 +54,9 @@ export default function RegisterProduct() {
 	const [allCategories, setAllCategories] = useState<BSCategoriesInfo[]>([]);
 	const [isLoadingAllProducts, setIsLoadingAllProducts] = useState<boolean>(false);
 	const [isLoadingAllCategories, setIsLoadingAllCategories] = useState<boolean>(false);
-	const [product, setProduct] = useState<BSProductsInfo>(new BSProductsInfo());
-	const [selectedProduct, setSelectedProduct] = useState<{
-		cmpCoProduto: number;
-		cmpDcProduto: string;
-	}>();
-	const [selectedCategory, setSelectedCategory] = useState<{
-		cmpCoCategoria: number;
-		cmpDcCategoria: string;
-	}>();
+	const [isLoadingSaveProduct, setIsLoadingSaveProduct] = useState<boolean>(false);
+	const [selectedCategory, setSelectedCategory] = useState<BSCategoriesInfo>();
+	const [selectedProduct, setSelectedProduct] = useState<BSProductsInfo>();
 
 	const fetchAlProducts = async (field: string, filter: string | null) => {
 		try {
@@ -217,21 +211,26 @@ export default function RegisterProduct() {
 				alertOpen: false,
 			});
 
+			const product: BSProductsInfo = new BSProductsInfo();
+
 			product.cmpCoProduto = selectedProduct?.cmpCoProduto || 0;
 			product.cmpDcProduto = values.prdName;
 			product.cmpVlQuantidade = parseInt(values.prdAmount);
 			product.cmpVlPreco = parseFloat(values.prdPrice);
+			product.cmpDcCategoria = selectedCategory?.cmpDcCategoria || values.prdCategory;
 			product.cmpCoCategoria = selectedCategory?.cmpCoCategoria || 0;
-			product.cmpDcCategoria = values.prdCategory;
 
 			try {
-				console.log(product);
+				setIsLoadingSaveProduct(true);
 				setSubmitting(true);
+
+				console.log(product);
+
+				// Cadastra o produto com a categoria
 				const requestData: BSAnswer = await saveProduct(product);
 
 				if (requestData?.Code === '0') {
 					// Resets form right after data is saved
-					console.log(requestData);
 					handleReset(true);
 					setAlertData({
 						alertColor: 'success',
@@ -243,7 +242,8 @@ export default function RegisterProduct() {
 					setAlertData({
 						alertColor: 'danger',
 						alertIcon: 'Report',
-						alertMessage: requestData.Message,
+						alertMessage:
+							'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
 						alertOpen: true,
 					});
 					setSubmitting(false);
@@ -255,11 +255,11 @@ export default function RegisterProduct() {
 					alertMessage: 'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
 					alertOpen: true,
 				});
-				console.log(error);
+				console.error(error);
 				setSubmitting(false);
 			} finally {
+				setIsLoadingSaveProduct(false);
 				setSubmitting(false);
-				// setIsLoadingPage(false);
 			}
 		},
 	});
@@ -364,15 +364,10 @@ export default function RegisterProduct() {
 															'prdPrice',
 															product.cmpVlPreco.toString(),
 														);
-														setSelectedCategory({
-															cmpCoCategoria: product.cmpCoCategoria,
-															cmpDcCategoria: product.cmpDcCategoria,
-														});
 													}
 												} else {
 													// formik.setFieldValue('prdName', '');
 													setSelectedProduct(undefined);
-													setSelectedCategory(undefined);
 													formik.setFieldValue('prdCode', '');
 													formik.setFieldValue('prdDesciption', '');
 													formik.setFieldValue('prdCategory', '');
@@ -432,8 +427,6 @@ export default function RegisterProduct() {
 														(item) =>
 															item.cmpCoCategoria === parseInt(prdid),
 													);
-
-													console.log(category);
 													setSelectedCategory(category);
 												}
 											}}
@@ -489,6 +482,7 @@ export default function RegisterProduct() {
 										color='femsaRed'
 										size='lg'
 										isDisable={!formik.isValid && !!formik.isSubmitting}>
+										{isLoadingSaveProduct && <Spinner isSmall inButton />}
 										Cadastrar
 									</Button>
 								</FormGroup>
