@@ -1,7 +1,14 @@
 import { AxiosError } from 'axios';
 import { useFormik } from 'formik';
 import { useEffect, useRef, useState } from 'react';
-import { BSAnswer, BSAnswerAllProducts, BSProductsInfo } from '../../classes/BSAnswer';
+import {
+	BSAnswer,
+	BSAnswerAllCategories,
+	BSAnswerAllProducts,
+	BSCategoriesInfo,
+	BSProductsInfo,
+} from '../../classes/BSAnswer';
+import Alert from '../../components/bootstrap/Alert';
 import Breadcrumb from '../../components/bootstrap/Breadcrumb';
 import Button from '../../components/bootstrap/Button';
 import Card, { CardBody, CardHeader, CardLabel, CardTitle } from '../../components/bootstrap/Card';
@@ -10,6 +17,7 @@ import Input from '../../components/bootstrap/forms/Input';
 import Label from '../../components/bootstrap/forms/Label';
 import Spinner from '../../components/bootstrap/Spinner';
 import Autocomplete from '../../components/custom/Autocomplete';
+import useAPICategory from '../../hooks/useAPICategory';
 import useAPIProducts from '../../hooks/useAPIProducts';
 import Page from '../../layout/Page/Page';
 import PageWrapper from '../../layout/PageWrapper/PageWrapper';
@@ -31,6 +39,7 @@ export default function RegisterProduct() {
 	const registerPath = '/cadastro-produtos';
 
 	const { getAllProducts, saveProduct } = useAPIProducts();
+	const { getAllCategories } = useAPICategory();
 	const { findValueByField } = functions();
 
 	const [alertData, setAlertData] = useState<IAlertData>({
@@ -40,10 +49,20 @@ export default function RegisterProduct() {
 		alertOpen: false,
 	});
 	const [productsListInput, setProductsListInput] = useState<IList[]>([]);
+	const [categoriesListInput, setCategoriesListInput] = useState<IList[]>([]);
 	const [allProducts, setAllProducts] = useState<BSProductsInfo[]>([]);
+	const [allCategories, setAllCategories] = useState<BSCategoriesInfo[]>([]);
 	const [isLoadingAllProducts, setIsLoadingAllProducts] = useState<boolean>(false);
+	const [isLoadingAllCategories, setIsLoadingAllCategories] = useState<boolean>(false);
 	const [product, setProduct] = useState<BSProductsInfo>(new BSProductsInfo());
-	const [selectedProduct, setSelectedProduct] = useState<string>('');
+	const [selectedProduct, setSelectedProduct] = useState<{
+		cmpCoProduto: number;
+		cmpDcProduto: string;
+	}>();
+	const [selectedCategory, setSelectedCategory] = useState<{
+		cmpCoCategoria: number;
+		cmpDcCategoria: string;
+	}>();
 
 	const fetchAlProducts = async (field: string, filter: string | null) => {
 		try {
@@ -54,7 +73,7 @@ export default function RegisterProduct() {
 				const error = requestData.response?.data.Message
 					? requestData.response?.data.Message
 					: requestData.message;
-				console.log('Erro (fetchAuthorizers): ', error);
+				console.log('Erro (fetchAlProducts): ', error);
 			} else {
 				if (requestData) {
 					const res = requestData as BSAnswerAllProducts;
@@ -82,11 +101,60 @@ export default function RegisterProduct() {
 		}
 	};
 
+	const fetchAlCategories = async (field: string, filter: string | null) => {
+		try {
+			setIsLoadingAllCategories(true);
+			const requestData = await getAllCategories(field, filter);
+
+			if (requestData instanceof AxiosError) {
+				const error = requestData.response?.data.Message
+					? requestData.response?.data.Message
+					: requestData.message;
+				console.log('Erro (fetchAlCategories): ', error);
+			} else {
+				if (requestData) {
+					const res = requestData as BSAnswerAllCategories;
+
+					if (res.Code === '0') {
+						const resData = res.Data;
+
+						if (resData) {
+							setAllCategories(resData);
+							const categories = resData.map((item: BSCategoriesInfo) => ({
+								text: item.cmpDcCategoria,
+								value: item.cmpCoCategoria.toString(),
+							}));
+							setCategoriesListInput(categories);
+						}
+					} else {
+						console.error('Error (fetchAuthorizers): ', res.Message);
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error (fetchAuthorizers): ', error);
+		} finally {
+			setIsLoadingAllCategories(false);
+		}
+	};
+
 	/**
 	 * UseEffects
 	 */
 	useEffect(() => {
+		if (alertData.alertOpen) {
+			if (alertRef.current) {
+				window.scrollTo(0, 0);
+			}
+		}
+	}, [alertData.alertOpen]);
+
+	useEffect(() => {
 		fetchAlProducts('geral', null);
+	}, []);
+
+	useEffect(() => {
+		fetchAlCategories('geral', null);
 	}, []);
 
 	/**
@@ -96,9 +164,8 @@ export default function RegisterProduct() {
 		formik.resetForm();
 
 		formik.setValues({
-			prdCode: '',
 			prdName: '',
-			prdDesciption: '',
+			prdCategory: '',
 			prdAmount: '',
 			prdPrice: '',
 		});
@@ -114,29 +181,24 @@ export default function RegisterProduct() {
 	};
 	const formik = useFormik({
 		initialValues: {
-			prdCode: '',
 			prdName: '',
-			prdDesciption: '',
+			prdCategory: '',
 			prdAmount: '',
 			prdPrice: '',
 		},
 		validate: (values) => {
 			const errors: {
-				prdCode?: string;
 				prdName?: string;
-				prdDesciption?: string;
+				prdCategory?: string;
 				prdAmount?: string;
 				prdPrice?: string;
 			} = {};
 
-			if (!values.prdCode) {
-				errors.prdCode = 'Campo obrigatório';
-			}
 			if (!values.prdName) {
 				errors.prdName = 'Campo obrigatório';
 			}
-			if (!values.prdDesciption) {
-				errors.prdDesciption = 'Campo obrigatório';
+			if (!values.prdCategory) {
+				errors.prdCategory = 'Campo obrigatório';
 			}
 			if (!values.prdAmount) {
 				errors.prdAmount = 'Campo obrigatório';
@@ -147,58 +209,44 @@ export default function RegisterProduct() {
 
 			return errors;
 		},
-		onSubmit: async (values) => {
-			console.log(values);
+		onSubmit: async (values, { setSubmitting }) => {
+			setAlertData({
+				alertColor: undefined,
+				alertIcon: '',
+				alertMessage: '',
+				alertOpen: false,
+			});
 
-			product.cmpCoProduto = parseInt(values.prdCode);
+			product.cmpCoProduto = selectedProduct?.cmpCoProduto || 0;
 			product.cmpDcProduto = values.prdName;
 			product.cmpVlQuantidade = parseInt(values.prdAmount);
 			product.cmpVlPreco = parseFloat(values.prdPrice);
+			product.cmpCoCategoria = selectedCategory?.cmpCoCategoria || 0;
+			product.cmpDcCategoria = values.prdCategory;
 
 			try {
-				const requestData = await saveProduct(product);
+				console.log(product);
+				setSubmitting(true);
+				const requestData: BSAnswer = await saveProduct(product);
 
-				if (requestData instanceof AxiosError) {
-					const error = requestData.response?.data.Message
-						? requestData.response?.data.Message
-						: 'Erro ao salvar produto! Por favor, tente novamente mais tarde!';
+				if (requestData?.Code === '0') {
+					// Resets form right after data is saved
+					console.log(requestData);
+					handleReset(true);
 					setAlertData({
-						alertColor: 'danger',
-						alertIcon: 'Report',
-						alertMessage: error,
+						alertColor: 'success',
+						alertIcon: 'CheckCircle',
+						alertMessage: 'Produto salvo com sucesso!',
 						alertOpen: true,
 					});
 				} else {
-					if (requestData) {
-						const res = requestData as BSAnswer;
-
-						if (res?.Code === '0') {
-							setAlertData({
-								alertColor: 'success',
-								alertIcon: 'CheckCircle',
-								alertMessage: 'Produto salvo com sucesso!',
-								alertOpen: true,
-							});
-
-							// Resets form right after data is saved
-							handleReset(true);
-						} else {
-							setAlertData({
-								alertColor: 'danger',
-								alertIcon: 'Report',
-								alertMessage: res.Message,
-								alertOpen: true,
-							});
-						}
-					} else {
-						setAlertData({
-							alertColor: 'danger',
-							alertIcon: 'Report',
-							alertMessage:
-								'Erro ao salvar produto! Por favor, tente novamente mais tarde!',
-							alertOpen: true,
-						});
-					}
+					setAlertData({
+						alertColor: 'danger',
+						alertIcon: 'Report',
+						alertMessage: requestData.Message,
+						alertOpen: true,
+					});
+					setSubmitting(false);
 				}
 			} catch (error) {
 				setAlertData({
@@ -208,7 +256,9 @@ export default function RegisterProduct() {
 					alertOpen: true,
 				});
 				console.log(error);
+				setSubmitting(false);
 			} finally {
+				setSubmitting(false);
 				// setIsLoadingPage(false);
 			}
 		},
@@ -222,9 +272,18 @@ export default function RegisterProduct() {
 				</SubHeaderLeft>
 			</SubHeader>
 			<Page container='fluid'>
+				{alertData.alertOpen && (
+					<Alert
+						isDismissible
+						isLight
+						color={alertData.alertColor}
+						icon={alertData.alertIcon}>
+						{alertData.alertMessage}
+					</Alert>
+				)}
 				<div className='row'>
 					<div className='col-xl-12 col-lg-12 col-md-12'>
-						<Card stretch tag='form' noValidate>
+						<Card stretch tag='form' noValidate onSubmit={formik.handleSubmit}>
 							<CardHeader className='text-black-white'>
 								<CardLabel>
 									<CardTitle style={{ fontWeight: '700', fontSize: '1.8em' }}>
@@ -235,16 +294,18 @@ export default function RegisterProduct() {
 							<CardBody className='pt-4 h-100'>
 								<div className='row'>
 									<FormGroup className='col-lg-12 col-md-12'>
-										<Label
-											htmlFor='prdName'
-											className='text-mediumGrayRM-white'
-											style={{ fontWeight: '600', fontSize: '1.3em' }}>
-											Nome
-										</Label>
-										<div className='ms-2'>
-											{isLoadingAllProducts && (
-												<Spinner isSmall color='femsaRed' />
-											)}
+										<div className='d-flex align-items-center'>
+											<Label
+												htmlFor='prdName'
+												className='text-mediumGrayRM-white'
+												style={{ fontWeight: '600', fontSize: '1.3em' }}>
+												Nome
+											</Label>
+											<div className='ms-2'>
+												{isLoadingAllProducts && (
+													<Spinner isSmall color='femsaRed' />
+												)}
+											</div>
 										</div>
 										<Autocomplete
 											id='prdName'
@@ -253,7 +314,7 @@ export default function RegisterProduct() {
 											size='lg'
 											type='input'
 											list={productsListInput}
-											value={selectedProduct}
+											value={formik.values.prdName}
 											minCharacters={4}
 											noOptionsMessage='Produto não encontrado!'
 											onChange={(e: string) => {
@@ -261,7 +322,7 @@ export default function RegisterProduct() {
 													(product) => product.text === e,
 												);
 
-												setSelectedProduct(e);
+												// setSelectedProduct(e);
 												if (e.length === 4) {
 													fetchAlProducts('geral', e);
 												}
@@ -279,6 +340,9 @@ export default function RegisterProduct() {
 														(item) =>
 															item.cmpCoProduto === parseInt(prdid),
 													);
+													setSelectedProduct(product);
+													console.log(product);
+
 													if (product) {
 														formik.setFieldValue(
 															'prdCode',
@@ -289,6 +353,10 @@ export default function RegisterProduct() {
 															product.cmpDcProduto,
 														);
 														formik.setFieldValue(
+															'prdCategory',
+															product.cmpDcCategoria,
+														);
+														formik.setFieldValue(
 															'prdAmount',
 															product.cmpVlQuantidade.toString(),
 														);
@@ -296,11 +364,18 @@ export default function RegisterProduct() {
 															'prdPrice',
 															product.cmpVlPreco.toString(),
 														);
+														setSelectedCategory({
+															cmpCoCategoria: product.cmpCoCategoria,
+															cmpDcCategoria: product.cmpDcCategoria,
+														});
 													}
 												} else {
-													formik.setFieldValue('prdName', '');
+													// formik.setFieldValue('prdName', '');
+													setSelectedProduct(undefined);
+													setSelectedCategory(undefined);
 													formik.setFieldValue('prdCode', '');
 													formik.setFieldValue('prdDesciption', '');
+													formik.setFieldValue('prdCategory', '');
 													formik.setFieldValue('prdAmount', '');
 													formik.setFieldValue('prdPrice', '');
 												}
@@ -312,42 +387,60 @@ export default function RegisterProduct() {
 										/>
 									</FormGroup>
 									<FormGroup className='col-lg-12 col-md-12 mt-3'>
-										<Label
-											htmlFor='prdCode'
-											className='text-mediumGrayRM-white'
-											style={{ fontWeight: '600', fontSize: '1.3em' }}>
-											Código
-										</Label>
-										<Input
-											id='prdCode'
+										<div className='d-flex align-items-center'>
+											<Label
+												htmlFor='prdCategory'
+												className='text-mediumGrayRM-white'
+												style={{ fontWeight: '600', fontSize: '1.3em' }}>
+												Categoria
+											</Label>
+											<div className='ms-2'>
+												{isLoadingAllCategories && (
+													<Spinner isSmall color='femsaRed' />
+												)}
+											</div>
+										</div>
+										<Autocomplete
+											id='prdCategory'
+											aria-label='prdCategory'
+											placeholder='Digite o nome da categoria'
 											size='lg'
-											placeholder='Digite o código do produto'
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-											value={formik.values.prdCode}
-											isValid={formik.isValid}
-											isTouched={formik.touched.prdCode}
-											invalidFeedback={formik.errors.prdCode}
-										/>
-									</FormGroup>
+											type='input'
+											list={categoriesListInput}
+											value={formik.values.prdCategory}
+											minCharacters={4}
+											noOptionsMessage='Categoria não encontrada!'
+											onChange={(e: string) => {
+												const isOptionSelected = categoriesListInput.some(
+													(category) => category.text === e,
+												);
 
-									<FormGroup className='col-lg-12 col-md-12 mt-3'>
-										<Label
-											htmlFor='prdDesciption'
-											className='text-mediumGrayRM-white'
-											style={{ fontWeight: '600', fontSize: '1.3em' }}>
-											Descrição
-										</Label>
-										<Input
-											id='prdDesciption'
-											size='lg'
-											placeholder='Digite a descrição do produto'
-											onChange={formik.handleChange}
+												if (e.length === 4) {
+													fetchAlCategories('geral', e);
+												}
+												formik.setFieldValue('prdCategory', e);
+
+												if (isOptionSelected) {
+													const prdid = findValueByField(
+														categoriesListInput,
+														e,
+														'value',
+														'text',
+													);
+
+													const category = allCategories.find(
+														(item) =>
+															item.cmpCoCategoria === parseInt(prdid),
+													);
+
+													console.log(category);
+													setSelectedCategory(category);
+												}
+											}}
 											onBlur={formik.handleBlur}
-											value={formik.values.prdDesciption}
 											isValid={formik.isValid}
-											isTouched={formik.touched.prdDesciption}
-											invalidFeedback={formik.errors.prdDesciption}
+											isTouched={formik.touched.prdCategory}
+											invalidFeedback={formik.errors.prdCategory}
 										/>
 									</FormGroup>
 									<FormGroup className='col-lg-12 col-md-12 mt-3'>
@@ -390,15 +483,15 @@ export default function RegisterProduct() {
 									</FormGroup>
 								</div>
 
-								<div className='mt-5 d-flex justify-content-end'>
+								<FormGroup className='mt-5 d-flex justify-content-end'>
 									<Button
 										type='submit'
 										color='femsaRed'
 										size='lg'
-										isDisable={!formik.isValid && !!formik.submitCount}>
+										isDisable={!formik.isValid && !!formik.isSubmitting}>
 										Cadastrar
 									</Button>
-								</div>
+								</FormGroup>
 							</CardBody>
 						</Card>
 					</div>
