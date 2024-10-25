@@ -10,6 +10,10 @@ const REGISTER = {
 	REGISTER: lazy(() => import('../pages/RegisterProduct/')),
 };
 
+const SALE = {
+	SALE: lazy(() => import('../pages/Sale/')),
+}
+
 const appPages: RouteProps[] = [
 	/**
 	 * Auth
@@ -25,6 +29,14 @@ const appPages: RouteProps[] = [
 	{
 		path: '/cadastro-produtos',
 		element: <REGISTER.REGISTER />,
+	},
+
+	/**
+	 * Sales
+	 */
+	{
+		path: '/venda',
+		element: <SALE.SALE />,
 	},
 ];
 
