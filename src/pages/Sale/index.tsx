@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import {
 	BSAnswerAllProducts,
 	BSAnswerPaymentMethods,
+	BSAnswerPersonsInfo,
 	BSPaymentMethodsInfo,
 	BSProductsInfo,
+	BSSaleDetailsInfo,
+	BSSaleInfo,
 } from '../../classes/BSAnswer';
 import Alert from '../../components/bootstrap/Alert';
 import Breadcrumb from '../../components/bootstrap/Breadcrumb';
@@ -13,6 +16,7 @@ import Button from '../../components/bootstrap/Button';
 import Card, { CardBody, CardHeader, CardLabel, CardTitle } from '../../components/bootstrap/Card';
 import FormGroup from '../../components/bootstrap/forms/FormGroup';
 import Input from '../../components/bootstrap/forms/Input';
+import InputGroup from '../../components/bootstrap/forms/InputGroup';
 import Label from '../../components/bootstrap/forms/Label';
 import Modal, {
 	ModalBody,
@@ -23,6 +27,7 @@ import Modal, {
 import Spinner from '../../components/bootstrap/Spinner';
 import Autocomplete from '../../components/custom/Autocomplete';
 import ProductTable from '../../components/custom/ProductTable';
+import useAPIPerson from '../../hooks/useAPIPerson';
 import useAPIProducts from '../../hooks/useAPIProducts';
 import useAPISale from '../../hooks/useAPISale';
 import Page from '../../layout/Page/Page';
@@ -31,6 +36,8 @@ import SubHeader, { SubHeaderLeft } from '../../layout/SubHeader/SubHeader';
 import { IAlertData } from '../../type/interfaces/IAlert';
 import { IList } from '../../type/interfaces/IList';
 import functions from '../../utils/functions';
+import { BSPersonsInfo } from '../../classes/BSPersonsInfo';
+import Select from '../../components/bootstrap/forms/Select';
 
 export default function Sale() {
 	/**
@@ -46,6 +53,7 @@ export default function Sale() {
 
 	const { getAllProducts } = useAPIProducts();
 	const { saveSale, getPaymentMethods } = useAPISale();
+	const { getPersons } = useAPIPerson();
 	const { findValueByField } = functions();
 
 	const [alertData, setAlertData] = useState<IAlertData>({
@@ -64,6 +72,10 @@ export default function Sale() {
 	const [modalStatus, setModalStatus] = useState<boolean>(false);
 	const [paymentMethods, setPaymentMethods] = useState<IList[]>([]);
 	const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+	const [isLoadingPersonSearch, setIsLoadingPersonSearch] = useState(false);
+	const [allPersons, setAllPersons] = useState<IList[]>([]);
+	const [personDocument, setPersonDocument] = useState<string>('');
+	const [selectedPerson, setSelectedPerson] = useState<string>('');
 
 	const fetchAlProducts = async (field: string, filter: string | null) => {
 		try {
@@ -122,7 +134,7 @@ export default function Sale() {
 							// setAllProducts(resData);
 							const methods = resData.map((item: BSPaymentMethodsInfo) => ({
 								text: item.cmpDcFormaPagamento,
-								value: item.cmpTpFormaPagamento,
+								value: item.cmpCoFormaPagamento.toString(),
 							}));
 							setPaymentMethods(methods);
 						}
@@ -133,6 +145,42 @@ export default function Sale() {
 			}
 		} catch (error) {
 			console.error('Error (fetchPaymentMethods): ', error);
+		}
+	};
+
+	const fetchPerson = async (field: string, filter: string, status: number) => {
+		try {
+			setIsLoadingPersonSearch(true);
+			const requestData = await getPersons(field, filter, status);
+
+			if (requestData instanceof AxiosError) {
+				const error = requestData.response?.data.Message
+					? requestData.response?.data.Message
+					: requestData.message;
+				console.log('Erro (fetchPerson): ', error);
+			} else {
+				if (requestData) {
+					const res = requestData as BSAnswerPersonsInfo;
+
+					if (res.Code === '0') {
+						const resData = res.Data;
+
+						if (resData) {
+							const allPersons = resData.map((item: BSPersonsInfo) => ({
+								text: item.NAME,
+								value: item.PERSID,
+							}));
+							setAllPersons(allPersons);
+						}
+					} else {
+						console.error('Error (fetchPerson): ', res.Message);
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error (fetchPerson): ', error);
+		} finally {
+			setIsLoadingPersonSearch(false);
 		}
 	};
 
@@ -226,6 +274,39 @@ export default function Sale() {
 		}
 	};
 
+	const handleConfirm = () => {
+		console.log('Finalizar venda');
+		try {
+			const details: BSSaleDetailsInfo[] = allSales.map((item) => {
+				return {
+					cmpCoVendaDetalhe: 0,
+					cmpCoVenda: 0,
+					cmpVlVendaDesconto: 0,
+					cmpCoProduto: item.cmpCoProduto,
+					cmpDcVendaProduto: item.cmpDcProduto,
+					cmpVlVendaPreco: item.cmpVlPreco,
+					cmpVlVendaQuantidade: item.cmpVlQuantidade,
+					cmpVlVendaSubtotal: item.cmpVlQuantidade * item.cmpVlPreco,
+				};
+			});
+			const saleData: BSSaleInfo = {
+				cmpCoVenda: 0,
+				cmpCoFormaPagamento: parseInt(selectedPaymentMethod),
+				cmpVlTotal: saleTotal,
+				PERSID: selectedPerson,
+				Detalhes: details,
+			};
+			console.log(saleData);
+		} catch (error) {
+		} finally {
+			handleReset(true);
+			setAllSales([]);
+			setModalStatus(false);
+			setSelectedPaymentMethod('');
+			setSelectedPerson('');
+			setPersonDocument('');
+		}
+	};
 	/**
 	 * Formik
 	 */
@@ -262,10 +343,12 @@ export default function Sale() {
 				alertOpen: false,
 			});
 			setSubmitting(true);
+			setModalStatus(false);
 
 			console.log(values);
 		},
 	});
+
 	return (
 		<PageWrapper title={'Venda'} ref={alertRef}>
 			<SubHeader className='mt-3'>
@@ -298,7 +381,7 @@ export default function Sale() {
 						</ModalHeader>
 						{/* Divider */}
 						<div className='d-flex justify-content-center align-items-center'>
-							<div className='col-12 border-bottom border-navyBlueRM' />
+							<div className='col-12 border-bottom' />
 						</div>
 						<ModalBody>
 							<div className='row'>
@@ -309,36 +392,112 @@ export default function Sale() {
 										<strong>R$ {saleTotal.toFixed(2).replace('.', ',')}</strong>
 									</p>
 									<h4>Formas de Pagamento</h4>
-									{paymentMethods.map((method) => (
-										<div className='mt-2'>
-											<label className='fs-5'>
-												<input
-													type='radio'
-													name='paymentMethod'
-													value={method.value}
-													checked={selectedPaymentMethod === method.value}
-													onChange={() =>
-														setSelectedPaymentMethod(method.value)
-													}
-												/>{' '}
-												{method.text}
-											</label>
-										</div>
-									))}
+									<FormGroup>
+										{paymentMethods.map((method, index) => (
+											<div className='mt-2' key={index}>
+												<label className='fs-5'>
+													<input
+														type='radio'
+														name='paymentMethod'
+														value={method.value}
+														checked={
+															selectedPaymentMethod === method.value
+														}
+														onChange={() =>
+															setSelectedPaymentMethod(method.value)
+														}
+													/>{' '}
+													{method.text}
+												</label>
+											</div>
+										))}
+									</FormGroup>
+									{selectedPaymentMethod === '4' && (
+										<>
+											<FormGroup className='col-lg-12 col-md-12 mt-3'>
+												<Label
+													htmlFor='searchDocOrNameOrAce'
+													style={{ fontWeight: '700', fontSize: '12px' }}>
+													Número do documento ou matrícula
+												</Label>
+												<InputGroup size='sm'>
+													<Input
+														id='searchDocOrNameOrAce'
+														placeholder='Digite documento ou matrícula do colaborador'
+														onChange={(
+															e: React.ChangeEvent<HTMLSelectElement>,
+														) => setPersonDocument(e.target.value)}
+														value={personDocument}
+														ariaDescribedby='button-addon'
+													/>
+													<Button
+														color='femsaRed'
+														id='button-addon'
+														onClick={() =>
+															fetchPerson('geral', personDocument, -1)
+														}>
+														Pesquisar
+													</Button>
+												</InputGroup>
+											</FormGroup>
+
+											<FormGroup
+												className='col-lg-12 col-md-12 mt-3'
+												size='sm'>
+												<div className='d-flex'>
+													<Label
+														htmlFor='searchPerson'
+														className='text-grayRM-white'
+														style={{
+															fontWeight: '700',
+															fontSize: '12px',
+														}}>
+														Colaborador
+													</Label>
+													{/* <div className='ms-2'>
+														{isLoadingPersonData && (
+															<Spinner isSmall color='navyBlueRM' />
+														)}
+													</div> */}
+												</div>
+												<Select
+													size='sm'
+													ariaLabel='searchPerson'
+													id='searchPerson'
+													placeholder='Escolha o colaborador'
+													list={allPersons}
+													onChange={(
+														event: React.ChangeEvent<HTMLSelectElement>,
+													) => {
+														const persid = event.target.value;
+
+														if (persid) {
+															setSelectedPerson(persid);
+														}
+													}}
+													value={selectedPerson}
+												/>
+											</FormGroup>
+										</>
+									)}
 								</div>
 							</div>
 						</ModalBody>
 						{/* Divider */}
 						<div className='d-flex justify-content-center align-items-center'>
-							<div className='col-12 border-bottom border-navyBlueRM' />
+							<div className='col-12 border-bottom' />
 						</div>
 						<ModalFooter>
-							<Button color='light' onClick={() => setModalStatus(false)}>
+							<Button
+								className='mx-2'
+								color='light'
+								onClick={() => setModalStatus(false)}>
 								Cancelar
 							</Button>
 							<Button
+								// type='submit'
 								color='femsaRed'
-								// onClick={handleConfirm}
+								onClick={handleConfirm}
 								isDisable={!selectedPaymentMethod}>
 								Finalizar
 							</Button>
@@ -465,11 +624,7 @@ export default function Sale() {
 								</FormGroup>
 							</div>
 							<FormGroup className='mt-2 d-flex justify-content-end'>
-								<Button
-									type='submit'
-									color='femsaRed'
-									size='lg'
-									onClick={handleAddProduct}>
+								<Button color='femsaRed' size='lg' onClick={handleAddProduct}>
 									{isEditing ? 'Salvar' : 'Adicionar'}
 								</Button>
 							</FormGroup>
@@ -506,7 +661,6 @@ export default function Sale() {
 								Total: R$ {saleTotal.toFixed(2).replace('.', ',')}
 							</CardTitle>
 							<Button
-								type='submit'
 								color={'femsaRed'}
 								size='lg'
 								onClick={() => setModalStatus(true)}>
