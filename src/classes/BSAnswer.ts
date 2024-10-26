@@ -66,3 +66,59 @@ export class BSAnswerAllCategories {
 		this.Data = [];
 	}
 }
+
+export class BSSaleDetailsInfo {
+	cmpCoVendaDetalhe: number;
+	cmpCoVenda: number;
+	cmpCoProduto: number;
+	cmpDcVendaProduto: string;
+	cmpVlVendaPreco: number;
+	cmpVlVendaQuantidade: number;
+	cmpVlVendaDesconto: number;
+	cmpVlVendaSubtotal: number;
+	constructor() {
+		this.cmpCoVendaDetalhe = 0;
+		this.cmpCoVenda = 0;
+		this.cmpCoProduto = 0;
+		this.cmpDcVendaProduto = '';
+		this.cmpVlVendaPreco = 0;
+		this.cmpVlVendaQuantidade = 0;
+		this.cmpVlVendaDesconto = 0;
+		this.cmpVlVendaSubtotal = 0;
+	}
+}
+export class BSSaleInfo {
+	cmpCoVenda: number;
+	cmpCoFormaPagamento: number;
+	cmpVlTotal: number;
+	Detalhes: BSSaleDetailsInfo[];
+	constructor() {
+		this.cmpCoVenda = 0;
+		this.cmpCoFormaPagamento = 0;
+		this.cmpVlTotal = 0;
+		this.Detalhes = [];
+	}
+}
+export class BSPaymentMethodsInfo {
+	cmpCoFormaPagamento: number;
+	cmpDcFormaPagamento: string;
+	cmpTpFormaPagamento: string;
+	constructor() {
+		this.cmpCoFormaPagamento = 0;
+		this.cmpDcFormaPagamento = '';
+		this.cmpTpFormaPagamento = '';
+	}
+}
+
+export class BSAnswerPaymentMethods {
+	Code: string;
+	Message: string;
+	Total: number;
+	Data: BSPaymentMethodsInfo[];
+	constructor() {
+		this.Code = '';
+		this.Message = '';
+		this.Total = 0;
+		this.Data = [];
+	}
+}
