@@ -34,14 +34,14 @@ const DefaultAside = () => {
 			<AsideBody>
 				{
 					<>
-						<Navigation menu={dashboardPagesMenu} id='aside-dashboard' />
+						<Navigation menu={dashboardPagesMenu} id='aside-dashboard'/>
 						<NavigationLine />
 					</>
 				}
 			</AsideBody>
-			<AsideFoot>
+			{/* <AsideFoot>
 				<User />
-			</AsideFoot>
+			</AsideFoot> */}
 		</Aside>
 	);
 };
