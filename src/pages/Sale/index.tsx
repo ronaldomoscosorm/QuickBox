@@ -240,6 +240,7 @@ export default function Sale() {
 				};
 				setAllSales([...allSales, newProduct]);
 				handleReset(true);
+				setSelectedProduct(undefined);
 			}
 		}
 	};
