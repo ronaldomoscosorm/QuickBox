@@ -1,3 +1,5 @@
+import { BSPersonsInfo } from "./BSPersonsInfo";
+
 export class BSAnswer {
 	Code: string;
 	Message: string;
@@ -91,11 +93,13 @@ export class BSSaleInfo {
 	cmpCoVenda: number;
 	cmpCoFormaPagamento: number;
 	cmpVlTotal: number;
+	PERSID: string;
 	Detalhes: BSSaleDetailsInfo[];
 	constructor() {
 		this.cmpCoVenda = 0;
 		this.cmpCoFormaPagamento = 0;
 		this.cmpVlTotal = 0;
+		this.PERSID = '';
 		this.Detalhes = [];
 	}
 }
@@ -115,6 +119,19 @@ export class BSAnswerPaymentMethods {
 	Message: string;
 	Total: number;
 	Data: BSPaymentMethodsInfo[];
+	constructor() {
+		this.Code = '';
+		this.Message = '';
+		this.Total = 0;
+		this.Data = [];
+	}
+}
+
+export class BSAnswerPersonsInfo {
+	Code: string;
+	Message: string;
+	Total: number;
+	Data: BSPersonsInfo[];
 	constructor() {
 		this.Code = '';
 		this.Message = '';
