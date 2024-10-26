@@ -13,7 +13,8 @@
 	display: flex;
 	flex-direction: column;
 	border-right: map.get($aside, border-size) solid map.get($aside, border-color);
-	background-color: map.get($aside, background-color);
+	// background-color: map.get($aside, background-color);
+	background-color: #CF2E2E;
 	color: color-contrast(map.get($aside, background-color));
 	transition: $transition-base;
 
@@ -48,7 +49,7 @@
 		@include backdrop-filter-blur(map-deep-get($aside, hover, blur));
 		// stylelint-disable declaration-colon-newline-after
 		background-color: rgba(
-			map.get($aside, background-color),
+			#993333,
 			map-deep-get($aside, hover, opacity)
 		);
 		// stylelint-enable declaration-colon-newline-after
