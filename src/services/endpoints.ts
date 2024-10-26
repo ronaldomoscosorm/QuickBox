@@ -3,6 +3,7 @@ import {
 	BSAnswerAllCategories,
 	BSAnswerAllProducts,
 	BSAnswerPaymentMethods,
+	BSAnswerPersonsInfo,
 	BSCategoriesInfo,
 	BSProductsInfo,
 	BSSaleInfo,
@@ -44,6 +45,16 @@ const saveSale = (body: BSSaleInfo) =>
 const getPaymentMethods = (field: string, filter: string | null) =>
 	Api.get<BSAnswerPaymentMethods>('/QuickBox/GetFormasPagamento/' + field + '/' + filter);
 
+/**
+ * Persons
+ */
+const getPersons = (field: string, filter: string, status: number) =>
+	Api.get<BSAnswerPersonsInfo>('/Persons/Get/' + field + '/' + filter + '/' + status, {
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	});
+
 const endpoints = {
 	getAllProducts,
 	saveProduct,
@@ -51,6 +62,7 @@ const endpoints = {
 	saveCategory,
 	saveSale,
 	getPaymentMethods,
+	getPersons,
 };
 
 export default endpoints;
