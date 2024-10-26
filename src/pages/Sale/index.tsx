@@ -625,7 +625,11 @@ export default function Sale() {
 								</FormGroup>
 							</div>
 							<FormGroup className='mt-2 d-flex justify-content-end'>
-								<Button color='femsaRed' size='lg' onClick={handleAddProduct}>
+								<Button
+									color='femsaRed'
+									size='lg'
+									onClick={handleAddProduct}
+									isDisable={!selectedProduct}>
 									{isEditing ? 'Salvar' : 'Adicionar'}
 								</Button>
 							</FormGroup>
@@ -664,6 +668,7 @@ export default function Sale() {
 							<Button
 								color={'femsaRed'}
 								size='lg'
+								isDisable={allSales.length === 0}
 								onClick={() => setModalStatus(true)}>
 								Finalizar
 							</Button>
