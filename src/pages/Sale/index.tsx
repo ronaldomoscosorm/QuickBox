@@ -1,7 +1,12 @@
 import { AxiosError } from 'axios';
 import { useFormik } from 'formik';
 import { useEffect, useRef, useState } from 'react';
-import { BSAnswerAllProducts, BSProductsInfo } from '../../classes/BSAnswer';
+import {
+	BSAnswerAllProducts,
+	BSAnswerPaymentMethods,
+	BSPaymentMethodsInfo,
+	BSProductsInfo,
+} from '../../classes/BSAnswer';
 import Alert from '../../components/bootstrap/Alert';
 import Breadcrumb from '../../components/bootstrap/Breadcrumb';
 import Button from '../../components/bootstrap/Button';
@@ -9,10 +14,17 @@ import Card, { CardBody, CardHeader, CardLabel, CardTitle } from '../../componen
 import FormGroup from '../../components/bootstrap/forms/FormGroup';
 import Input from '../../components/bootstrap/forms/Input';
 import Label from '../../components/bootstrap/forms/Label';
+import Modal, {
+	ModalBody,
+	ModalFooter,
+	ModalHeader,
+	ModalTitle,
+} from '../../components/bootstrap/Modal';
 import Spinner from '../../components/bootstrap/Spinner';
 import Autocomplete from '../../components/custom/Autocomplete';
 import ProductTable from '../../components/custom/ProductTable';
 import useAPIProducts from '../../hooks/useAPIProducts';
+import useAPISale from '../../hooks/useAPISale';
 import Page from '../../layout/Page/Page';
 import PageWrapper from '../../layout/PageWrapper/PageWrapper';
 import SubHeader, { SubHeaderLeft } from '../../layout/SubHeader/SubHeader';
@@ -33,6 +45,7 @@ export default function Sale() {
 	const registerPath = '/venda';
 
 	const { getAllProducts } = useAPIProducts();
+	const { saveSale, getPaymentMethods } = useAPISale();
 	const { findValueByField } = functions();
 
 	const [alertData, setAlertData] = useState<IAlertData>({
@@ -48,6 +61,9 @@ export default function Sale() {
 	const [allSales, setAllSales] = useState<BSProductsInfo[]>([]);
 	const [saleTotal, setSaleTotal] = useState<number>(0);
 	const [isEditing, setIsEditing] = useState(false);
+	const [modalStatus, setModalStatus] = useState<boolean>(false);
+	const [paymentMethods, setPaymentMethods] = useState<IList[]>([]);
+	const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
 
 	const fetchAlProducts = async (field: string, filter: string | null) => {
 		try {
@@ -86,6 +102,40 @@ export default function Sale() {
 		}
 	};
 
+	const fetchPaymentMethods = async (field: string, filter: string | null) => {
+		try {
+			const requestData = await getPaymentMethods(field, filter);
+
+			if (requestData instanceof AxiosError) {
+				const error = requestData.response?.data.Message
+					? requestData.response?.data.Message
+					: requestData.message;
+				console.log('Erro (fetchPaymentMethods): ', error);
+			} else {
+				if (requestData) {
+					const res = requestData as BSAnswerPaymentMethods;
+
+					if (res.Code === '0') {
+						const resData = res.Data;
+
+						if (resData) {
+							// setAllProducts(resData);
+							const methods = resData.map((item: BSPaymentMethodsInfo) => ({
+								text: item.cmpDcFormaPagamento,
+								value: item.cmpTpFormaPagamento,
+							}));
+							setPaymentMethods(methods);
+						}
+					} else {
+						console.error('Error (fetchPaymentMethods): ', res.Message);
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error (fetchPaymentMethods): ', error);
+		}
+	};
+
 	/**
 	 * UseEffects
 	 */
@@ -110,6 +160,12 @@ export default function Sale() {
 			setSaleTotal(0);
 		}
 	}, [allSales]);
+
+	useEffect(() => {
+		if (modalStatus) {
+			fetchPaymentMethods('geral', null);
+		}
+	}, [modalStatus]);
 
 	const handleAddProduct = () => {
 		if (isEditing) {
@@ -227,6 +283,69 @@ export default function Sale() {
 						{alertData.alertMessage}
 					</Alert>
 				)}
+				<div className='col-12'>
+					<Modal
+						setIsOpen={setModalStatus}
+						isOpen={modalStatus}
+						titleId='finish-sale'
+						isCentered
+						isStaticBackdrop
+						aria-modal='true'>
+						<ModalHeader setIsOpen={setModalStatus}>
+							<ModalTitle id='finish-sale' className='fs-3'>
+								Finalizar Venda
+							</ModalTitle>
+						</ModalHeader>
+						{/* Divider */}
+						<div className='d-flex justify-content-center align-items-center'>
+							<div className='col-12 border-bottom border-navyBlueRM' />
+						</div>
+						<ModalBody>
+							<div className='row'>
+								<div className='col-lg-12 col-md-12'>
+									<h4>Resumo da Venda</h4>
+									<p className='fs-5'>
+										Valor total:{' '}
+										<strong>R$ {saleTotal.toFixed(2).replace('.', ',')}</strong>
+									</p>
+									<h4>Formas de Pagamento</h4>
+									{paymentMethods.map((method) => (
+										<div className='mt-2'>
+											<label className='fs-5'>
+												<input
+													type='radio'
+													name='paymentMethod'
+													value={method.value}
+													checked={selectedPaymentMethod === method.value}
+													onChange={() =>
+														setSelectedPaymentMethod(method.value)
+													}
+												/>{' '}
+												{method.text}
+											</label>
+										</div>
+									))}
+								</div>
+							</div>
+						</ModalBody>
+						{/* Divider */}
+						<div className='d-flex justify-content-center align-items-center'>
+							<div className='col-12 border-bottom border-navyBlueRM' />
+						</div>
+						<ModalFooter>
+							<Button color='light' onClick={() => setModalStatus(false)}>
+								Cancelar
+							</Button>
+							<Button
+								color='femsaRed'
+								// onClick={handleConfirm}
+								isDisable={!selectedPaymentMethod}>
+								Finalizar
+							</Button>
+						</ModalFooter>
+					</Modal>
+				</div>
+
 				<div className='col-xl-12 col-lg-12 col-md-12'>
 					<Card stretch>
 						<CardHeader className='text-black-white'>
@@ -381,7 +500,7 @@ export default function Sale() {
 				</div>
 
 				<div className='col-xl-12 col-lg-12 col-md-12'>
-					<Card stretch tag='form' noValidate onSubmit={formik.handleSubmit}>
+					<Card stretch>
 						<CardBody className='d-flex justify-content-between align-items-center p-3'>
 							<CardTitle style={{ fontWeight: '700', fontSize: '1.8em' }}>
 								Total: R$ {saleTotal.toFixed(2).replace('.', ',')}
@@ -390,7 +509,7 @@ export default function Sale() {
 								type='submit'
 								color={'femsaRed'}
 								size='lg'
-								onClick={() => handleReset(false)}>
+								onClick={() => setModalStatus(true)}>
 								Finalizar
 							</Button>
 						</CardBody>
