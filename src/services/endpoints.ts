@@ -4,12 +4,15 @@ import {
 	BSAnswerAllProducts,
 	BSAnswerPaymentMethods,
 	BSAnswerPersonsInfo,
+	BSAnswerString,
 	BSCategoriesInfo,
 	BSProductsInfo,
 	BSSaleInfo,
 } from '../classes/BSAnswer';
 
 let Api: AxiosInstance;
+
+const ratio: number = 1;
 
 Api = axios.create({
 	baseURL: 'https://api.rmtecho.com.br/api',
@@ -55,6 +58,13 @@ const getPersons = (field: string, filter: string, status: number) =>
 		},
 	});
 
+const getPersonsPhoto = (document: string) =>
+	Api.get<BSAnswerString>('/Persons/GetPhoto/' + document + '/' + ratio, {
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	});
+
 const endpoints = {
 	getAllProducts,
 	saveProduct,
@@ -63,6 +73,7 @@ const endpoints = {
 	saveSale,
 	getPaymentMethods,
 	getPersons,
+	getPersonsPhoto,
 };
 
 export default endpoints;

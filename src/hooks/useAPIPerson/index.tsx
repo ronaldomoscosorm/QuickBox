@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { useCallback, useContext, useState } from 'react';
+import { useCallback } from 'react';
 import endpoints from '../../services/endpoints';
 
 const useAPIPerson = () => {
@@ -22,8 +22,22 @@ const useAPIPerson = () => {
 		[],
 	);
 
+	const getPersonsPhoto = useCallback(async (document: string) => {
+		try {
+			const { status, data } = await endpoints.getPersonsPhoto(document);
+
+			console.log('Status chamada API (getPersonsPhoto): ' + status.toString());
+			return data;
+		} catch (error) {
+			const err = error as AxiosError;
+			console.log(err);
+			return error;
+		}
+	}, []);
+
 	return {
 		getPersons,
+		getPersonsPhoto,
 	};
 };
 
