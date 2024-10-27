@@ -5,11 +5,14 @@ import {
 	BSAnswerAllProducts,
 	BSAnswerPaymentMethods,
 	BSAnswerPersonsInfo,
+	BSAnswerString,
 	BSPaymentMethodsInfo,
 	BSProductsInfo,
 	BSSaleDetailsInfo,
 	BSSaleInfo,
 } from '../../classes/BSAnswer';
+import { BSPersonsInfo } from '../../classes/BSPersonsInfo';
+import Avatar from '../../components/Avatar';
 import Alert from '../../components/bootstrap/Alert';
 import Breadcrumb from '../../components/bootstrap/Breadcrumb';
 import Button from '../../components/bootstrap/Button';
@@ -18,6 +21,7 @@ import FormGroup from '../../components/bootstrap/forms/FormGroup';
 import Input from '../../components/bootstrap/forms/Input';
 import InputGroup from '../../components/bootstrap/forms/InputGroup';
 import Label from '../../components/bootstrap/forms/Label';
+import Select from '../../components/bootstrap/forms/Select';
 import Modal, {
 	ModalBody,
 	ModalFooter,
@@ -36,8 +40,6 @@ import SubHeader, { SubHeaderLeft } from '../../layout/SubHeader/SubHeader';
 import { IAlertData } from '../../type/interfaces/IAlert';
 import { IList } from '../../type/interfaces/IList';
 import functions from '../../utils/functions';
-import { BSPersonsInfo } from '../../classes/BSPersonsInfo';
-import Select from '../../components/bootstrap/forms/Select';
 
 export default function Sale() {
 	/**
@@ -53,8 +55,8 @@ export default function Sale() {
 
 	const { getAllProducts } = useAPIProducts();
 	const { saveSale, getPaymentMethods } = useAPISale();
-	const { getPersons } = useAPIPerson();
-	const { findValueByField } = functions();
+	const { getPersons, getPersonsPhoto } = useAPIPerson();
+	const { findValueByField, reconstructBase64String } = functions();
 
 	const [alertData, setAlertData] = useState<IAlertData>({
 		alertColor: undefined,
@@ -73,9 +75,12 @@ export default function Sale() {
 	const [paymentMethods, setPaymentMethods] = useState<IList[]>([]);
 	const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
 	const [isLoadingPersonSearch, setIsLoadingPersonSearch] = useState(false);
-	const [allPersons, setAllPersons] = useState<IList[]>([]);
+	const [person, setPerson] = useState<BSPersonsInfo>();
+	const [allPersonsInputList, setAllPersonsInputList] = useState<IList[]>([]);
 	const [personDocument, setPersonDocument] = useState<string>('');
 	const [selectedPerson, setSelectedPerson] = useState<string>('');
+	const [errorMessage, setErrorMessage] = useState<string>('');
+	const [photo, setPhoto] = useState<string>('');
 
 	const fetchAlProducts = async (field: string, filter: string | null) => {
 		try {
@@ -166,11 +171,12 @@ export default function Sale() {
 						const resData = res.Data;
 
 						if (resData) {
+							setPerson(resData[0]);
 							const allPersons = resData.map((item: BSPersonsInfo) => ({
 								text: item.NAME,
 								value: item.PERSID,
 							}));
-							setAllPersons(allPersons);
+							setAllPersonsInputList(allPersons);
 						}
 					} else {
 						console.error('Error (fetchPerson): ', res.Message);
@@ -181,6 +187,36 @@ export default function Sale() {
 			console.error('Error (fetchPerson): ', error);
 		} finally {
 			setIsLoadingPersonSearch(false);
+		}
+	};
+
+	const fetchPersonPhoto = async (document: string) => {
+		try {
+			const requestData = await getPersonsPhoto(document);
+
+			if (requestData instanceof AxiosError) {
+				const error = requestData.response?.data.Message
+					? requestData.response?.data.Message
+					: requestData.message;
+				console.log('Erro (fetchPersonPhoto): ', error);
+			} else {
+				if (requestData) {
+					const res = requestData as BSAnswerString;
+
+					if (res.Code === '0') {
+						const resData = res.Data;
+
+						if (resData) {
+							const photoImage = reconstructBase64String(resData);
+							setPhoto(photoImage);
+						}
+					} else {
+						console.error('Error (fetchPersonPhoto): ', res.Message);
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error (fetchPersonPhoto): ', error);
 		}
 	};
 
@@ -276,7 +312,6 @@ export default function Sale() {
 	};
 
 	const handleConfirm = () => {
-		console.log('Finalizar venda');
 		try {
 			const details: BSSaleDetailsInfo[] = allSales.map((item) => {
 				return {
@@ -297,8 +332,35 @@ export default function Sale() {
 				PERSID: selectedPerson,
 				Detalhes: details,
 			};
-			console.log(saleData);
+			saveSale(saleData).then((res) => {
+				if (res) {
+					const response = res as BSAnswerString;
+
+					if (response.Code === '0') {
+						setAlertData({
+							alertColor: 'success',
+							alertIcon: 'check-circle',
+							alertMessage: 'Venda finalizada com sucesso',
+							alertOpen: true,
+						});
+					} else {
+						setAlertData({
+							alertColor: 'danger',
+							alertIcon: 'exclamation-triangle',
+							alertMessage: 'Erro ao finalizar a venda',
+							alertOpen: true,
+						});
+					}
+				}
+			});
 		} catch (error) {
+			console.error('Error (handleConfirm): ', error);
+			setAlertData({
+				alertColor: 'danger',
+				alertIcon: 'exclamation-triangle',
+				alertMessage: 'Erro ao finalizar a venda',
+				alertOpen: true,
+			});
 		} finally {
 			handleReset(true);
 			setAllSales([]);
@@ -306,6 +368,7 @@ export default function Sale() {
 			setSelectedPaymentMethod('');
 			setSelectedPerson('');
 			setPersonDocument('');
+			setPhoto('');
 		}
 	};
 	/**
@@ -466,7 +529,7 @@ export default function Sale() {
 													ariaLabel='searchPerson'
 													id='searchPerson'
 													placeholder='Escolha o colaborador'
-													list={allPersons}
+													list={allPersonsInputList}
 													onChange={(
 														event: React.ChangeEvent<HTMLSelectElement>,
 													) => {
@@ -474,11 +537,33 @@ export default function Sale() {
 
 														if (persid) {
 															setSelectedPerson(persid);
+															if (person?.DOCUMENT) {
+																fetchPersonPhoto(person.DOCUMENT);
+															} else {
+																setErrorMessage(
+																	'Imagem não encontrada para este colaborador',
+																);
+															}
 														}
 													}}
 													value={selectedPerson}
 												/>
 											</FormGroup>
+											{errorMessage && (
+												<p className='text-danger p-1'>{errorMessage}</p>
+											)}
+											{photo && (
+												<div className='col-lg-auto text-center mt-2'>
+													<Avatar
+														className='object-fit-fill'
+														src={photo}
+														shadow='default'
+														// color='FEMSAreD'
+														rounded={1}
+														size={120}
+													/>
+												</div>
+											)}
 										</>
 									)}
 								</div>
