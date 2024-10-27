@@ -139,3 +139,16 @@ export class BSAnswerPersonsInfo {
 		this.Data = [];
 	}
 }
+
+export class BSAnswerString {
+	Code: string;
+	Message: string;
+	Total: number;
+	Data: string;
+	constructor() {
+		this.Code = '';
+		this.Message = '';
+		this.Total = 0;
+		this.Data = '';
+	}
+}
