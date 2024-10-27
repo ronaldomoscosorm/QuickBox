@@ -36,7 +36,7 @@ export interface IUserProps {
 
 const john: IUserProps = {
 	id: '1',
-	username: 'john',
+	username: 'usuario',
 	name: 'John',
 	surname: 'Doe',
 	position: 'CEO, Founder',
@@ -47,7 +47,7 @@ const john: IUserProps = {
 	isReply: true,
 	color: 'primary',
 	services: [SERVICES.SURFING, SERVICES.KITE_SURFING, SERVICES.TENNIS],
-	password: '@ABC123',
+	password: '123456',
 };
 
 const grace: IUserProps = {

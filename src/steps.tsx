@@ -740,22 +740,22 @@ const steps = [
 	 * @step 10
 	 */
 	{
-		selector: '[href="/auth-pages/login"]',
+		selector: '[href="/login"]',
 		content: () => <AuthPageTour />,
 		highlightedSelectors: [
-			'[href="/auth-pages/login"]',
+			'[href="/login"]',
 			'[href="/auth-pages/sign-up"]',
 			'[href="/auth-pages/404"]',
 			getTargetName('login-page'),
 		],
 		mutationObservables: [
-			'[href="/auth-pages/login"]',
+			'[href="/login"]',
 			'[href="/auth-pages/sign-up"]',
 			'[href="/auth-pages/404"]',
 			getTargetName('login-page'),
 		],
 		resizeObservables: [
-			'[href="/auth-pages/login"]',
+			'[href="/login"]',
 			'[href="/auth-pages/sign-up"]',
 			'[href="/auth-pages/404"]',
 			getTargetName('login-page'),

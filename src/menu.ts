@@ -30,40 +30,51 @@ export const summaryPageTopMenu = {
 	},
 };
 
+/**
+ * Home
+ */
+export const homePageMenu = {
+	home: {
+		id: 'home',
+		text: 'Home',
+		path: '/',
+		icon: 'Home',
+		subMenu: null,
+	},
+};
+
+/**
+ * Auth
+ */
+export const authPagesMenu = {
+	login: {
+		id: 'login',
+		text: 'Login',
+		path: 'login',
+		icon: 'Login',
+	},
+	page404: {
+		id: 'Page404',
+		text: '404 Page',
+		path: 'pagina404',
+		icon: 'ReportGmailerrorred',
+	},
+};
+
 export const dashboardPagesMenu = {
 	dashboard: {
 		id: 'dashboard',
-		text: 'Dashboard',
-		path: '/',
-		icon: 'Dashboard',
+		text: 'Venda',
+		path: '/venda',
+		icon: 'ShoppingCart',
 		subMenu: null,
 	},
-	dashboardProject: {
-		id: 'dashboardProject',
-		text: 'Dashboard Projects',
-		path: 'project-management/list',
-		icon: 'AutoStories',
-		notification: true,
-		subMenu: null,
-	},
-	dashboardBooking: {
-		id: 'dashboard-booking',
-		text: 'Dashboard Booking',
-		path: 'dashboard-booking',
-		icon: 'emoji_transportation',
-		subMenu: null,
-	},
-	crmDashboard: {
-		id: 'crmDashboard',
-		text: 'CRM Dashboard',
-		path: 'crm/dashboard',
-		icon: 'RecentActors',
-	},
-	summary: {
-		id: 'summary',
-		text: 'Summary',
-		path: 'summary',
-		icon: 'sticky_note_2',
+
+	product: {
+		id: 'product',
+		text: 'Cadastrar Produto',
+		path: '/cadastro-produtos',
+		icon: 'NoteAdd',
 		subMenu: null,
 	},
 };
@@ -288,7 +299,6 @@ export const demoPagesMenu = {
 		path: 'appointment',
 		icon: 'Today',
 		subMenu: {
-			dashboard: dashboardPagesMenu.dashboardBooking,
 			calendar: {
 				id: 'calendar',
 				text: 'Calendar',
@@ -393,17 +403,6 @@ export const demoPagesMenu = {
 		},
 	},
 
-	auth: {
-		id: 'auth',
-		text: 'Auth Pages',
-		icon: 'Extension',
-	},
-	login: {
-		id: 'login',
-		text: 'Login',
-		path: 'auth-pages/login',
-		icon: 'Login',
-	},
 	signUp: {
 		id: 'signUp',
 		text: 'Sign Up',

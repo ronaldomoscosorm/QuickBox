@@ -1,18 +1,18 @@
-import React, { useState, useContext, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
+import { ReactNode, useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useWindowSize } from 'react-use';
-import { demoPagesMenu } from '../../menu';
-import { DropdownItem, DropdownMenu } from '../../components/bootstrap/Dropdown';
 import Button from '../../components/bootstrap/Button';
-import useDarkMode from '../../hooks/useDarkMode';
 import Collapse from '../../components/bootstrap/Collapse';
-import { NavigationLine } from '../Navigation/Navigation';
+import { DropdownItem, DropdownMenu } from '../../components/bootstrap/Dropdown';
 import Icon from '../../components/icon/Icon';
-import useNavigationItemHandle from '../../hooks/useNavigationItemHandle';
 import AuthContext from '../../contexts/authContext';
 import ThemeContext from '../../contexts/themeContext';
+import useDarkMode from '../../hooks/useDarkMode';
+import useNavigationItemHandle from '../../hooks/useNavigationItemHandle';
+import { authPagesMenu, demoPagesMenu } from '../../menu';
+import { NavigationLine } from '../Navigation/Navigation';
 
 const User = () => {
 	const { width } = useWindowSize();
@@ -131,7 +131,7 @@ const User = () => {
 								if (width < Number(process.env.REACT_APP_MOBILE_BREAKPOINT_SIZE)) {
 									setAsideStatus(false);
 								}
-								navigate(`../${demoPagesMenu.login.path}`);
+								navigate(`../${authPagesMenu.login.path}`);
 							}}>
 							<span className='navigation-link navigation-link-pill'>
 								<span className='navigation-link-info'>

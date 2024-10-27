@@ -15,6 +15,7 @@ import AuthContext from '../../../contexts/authContext';
 import USERS, { getUserDataWithUsername } from '../../../common/data/userDummyData';
 import Spinner from '../../../components/bootstrap/Spinner';
 import Alert from '../../../components/bootstrap/Alert';
+import { IAlertData } from '../../../type/interfaces/IAlert';
 
 interface ILoginHeaderProps {
 	isNewUser?: boolean;
@@ -30,8 +31,8 @@ const LoginHeader: FC<ILoginHeaderProps> = ({ isNewUser }) => {
 	}
 	return (
 		<>
-			<div className='text-center h1 fw-bold mt-5'>Welcome,</div>
-			<div className='text-center h4 text-muted mb-5'>Sign in to continue!</div>
+			<div className='text-center h1 fw-bold mt-5'>Bem-vindo,</div>
+			<div className='text-center h4 text-muted mb-5'>Faça login para continuar!</div>
 		</>
 	);
 };
@@ -49,6 +50,12 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 
 	const [signInPassword, setSignInPassword] = useState<boolean>(false);
 	const [singUpStatus, setSingUpStatus] = useState<boolean>(!!isSignUp);
+	const [alertData, setAlertData] = useState<IAlertData>({
+		alertColor: undefined,
+		alertIcon: '',
+		alertMessage: '',
+		alertOpen: false,
+	});
 
 	const navigate = useNavigate();
 	const handleOnClick = useCallback(() => navigate('/'), [navigate]);
@@ -114,255 +121,83 @@ const Login: FC<ILoginProps> = ({ isSignUp }) => {
 	};
 
 	return (
-		<PageWrapper
-			isProtected={false}
-			title={singUpStatus ? 'Sign Up' : 'Login'}
-			className={classNames({ 'bg-dark': !singUpStatus, 'bg-light': singUpStatus })}>
+		<PageWrapper isProtected={false} title={'Login'} className={classNames('bg-light')}>
 			<Page className='p-0'>
 				<div className='row h-100 align-items-center justify-content-center'>
 					<div className='col-xl-4 col-lg-6 col-md-8 shadow-3d-container'>
 						<Card className='shadow-3d-dark' data-tour='login-page'>
 							<CardBody>
-								<div className='text-center my-5'>
-									<Link
-										to='/'
-										className={classNames(
-											'text-decoration-none  fw-bold display-2',
-											{
-												'text-dark': !darkModeStatus,
-												'text-light': darkModeStatus,
-											},
-										)}
-										aria-label='Facit'>
-										<Logo width={200} />
-									</Link>
-								</div>
-								<div
-									className={classNames('rounded-3', {
-										'bg-l10-dark': !darkModeStatus,
-										'bg-dark': darkModeStatus,
-									})}>
-									<div className='row row-cols-2 g-3 pb-3 px-3 mt-0'>
-										<div className='col'>
-											<Button
-												color={darkModeStatus ? 'light' : 'dark'}
-												isLight={singUpStatus}
-												className='rounded-1 w-100'
-												size='lg'
-												onClick={() => {
-													setSignInPassword(false);
-													setSingUpStatus(!singUpStatus);
-												}}>
-												Login
-											</Button>
-										</div>
-										<div className='col'>
-											<Button
-												color={darkModeStatus ? 'light' : 'dark'}
-												isLight={!singUpStatus}
-												className='rounded-1 w-100'
-												size='lg'
-												onClick={() => {
-													setSignInPassword(false);
-													setSingUpStatus(!singUpStatus);
-												}}>
-												Sign Up
-											</Button>
-										</div>
-									</div>
+								<div className='d-flex justify-content-center'>
+									<Logo width={'auto'} />
 								</div>
 
-								<LoginHeader isNewUser={singUpStatus} />
+								<LoginHeader />
 
-								<Alert isLight icon='Lock' isDismissible>
-									<div className='row'>
-										<div className='col-12'>
-											<strong>Username:</strong> {USERS.JOHN.username}
-										</div>
-										<div className='col-12'>
-											<strong>Password:</strong> {USERS.JOHN.password}
-										</div>
-									</div>
-								</Alert>
+								{alertData.alertOpen && (
+									<Alert
+										isLight
+										color={alertData.alertColor}
+										icon={alertData.alertIcon}>
+										{alertData.alertMessage}
+									</Alert>
+								)}
+
 								<form className='row g-4'>
-									{singUpStatus ? (
-										<>
-											<div className='col-12'>
-												<FormGroup
-													id='signup-email'
-													isFloating
-													label='Your email'>
-													<Input type='email' autoComplete='email' />
-												</FormGroup>
-											</div>
-											<div className='col-12'>
-												<FormGroup
-													id='signup-name'
-													isFloating
-													label='Your name'>
-													<Input autoComplete='given-name' />
-												</FormGroup>
-											</div>
-											<div className='col-12'>
-												<FormGroup
-													id='signup-surname'
-													isFloating
-													label='Your surname'>
-													<Input autoComplete='family-name' />
-												</FormGroup>
-											</div>
-											<div className='col-12'>
-												<FormGroup
-													id='signup-password'
-													isFloating
-													label='Password'>
-													<Input
-														type='password'
-														autoComplete='password'
-													/>
-												</FormGroup>
-											</div>
-											<div className='col-12'>
-												<Button
-													color='info'
-													className='w-100 py-3'
-													onClick={handleOnClick}>
-													Sign Up
-												</Button>
-											</div>
-										</>
-									) : (
-										<>
-											<div className='col-12'>
-												<FormGroup
-													id='loginUsername'
-													isFloating
-													label='Your email or username'
-													className={classNames({
-														'd-none': signInPassword,
-													})}>
-													<Input
-														autoComplete='username'
-														value={formik.values.loginUsername}
-														isTouched={formik.touched.loginUsername}
-														invalidFeedback={
-															formik.errors.loginUsername
-														}
-														isValid={formik.isValid}
-														onChange={formik.handleChange}
-														onBlur={formik.handleBlur}
-														onFocus={() => {
-															formik.setErrors({});
-														}}
-													/>
-												</FormGroup>
-												{signInPassword && (
-													<div className='text-center h4 mb-3 fw-bold'>
-														Hi, {formik.values.loginUsername}.
-													</div>
-												)}
-												<FormGroup
-													id='loginPassword'
-													isFloating
-													label='Password'
-													className={classNames({
-														'd-none': !signInPassword,
-													})}>
-													<Input
-														type='password'
-														autoComplete='current-password'
-														value={formik.values.loginPassword}
-														isTouched={formik.touched.loginPassword}
-														invalidFeedback={
-															formik.errors.loginPassword
-														}
-														validFeedback='Looks good!'
-														isValid={formik.isValid}
-														onChange={formik.handleChange}
-														onBlur={formik.handleBlur}
-													/>
-												</FormGroup>
-											</div>
-											<div className='col-12'>
-												{!signInPassword ? (
-													<Button
-														color='warning'
-														className='w-100 py-3'
-														isDisable={!formik.values.loginUsername}
-														onClick={handleContinue}>
-														{isLoading && (
-															<Spinner isSmall inButton isGrow />
-														)}
-														Continue
-													</Button>
-												) : (
-													<Button
-														color='warning'
-														className='w-100 py-3'
-														onClick={formik.handleSubmit}>
-														Login
-													</Button>
-												)}
-											</div>
-										</>
-									)}
+									<FormGroup
+										id='loginUsername'
+										className='col-lg-12 col-md-12'
+										label='Nome de usuário'>
+										<Input
+											autoComplete='username'
+											className='bg-lightGrayFacit border-transparent text-grayRM'
+											value={formik.values.loginUsername}
+											isTouched={formik.touched.loginUsername}
+											invalidFeedback={formik.errors.loginUsername}
+											isValid={formik.isValid}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+											onFocus={() => {
+												formik.setErrors({});
+												setAlertData({
+													alertColor: undefined,
+													alertIcon: '',
+													alertMessage: '',
+													alertOpen: false,
+												});
+											}}
+										/>
+									</FormGroup>
 
-									{/* BEGIN :: Social Login */}
-									{!signInPassword && (
-										<>
-											<div className='col-12 mt-3 text-center text-muted'>
-												OR
-											</div>
-											<div className='col-12 mt-3'>
-												<Button
-													isOutline
-													color={darkModeStatus ? 'light' : 'dark'}
-													className={classNames('w-100 py-3', {
-														'border-light': !darkModeStatus,
-														'border-dark': darkModeStatus,
-													})}
-													icon='CustomApple'
-													onClick={handleOnClick}>
-													Sign in with Apple
-												</Button>
-											</div>
-											<div className='col-12'>
-												<Button
-													isOutline
-													color={darkModeStatus ? 'light' : 'dark'}
-													className={classNames('w-100 py-3', {
-														'border-light': !darkModeStatus,
-														'border-dark': darkModeStatus,
-													})}
-													icon='CustomGoogle'
-													onClick={handleOnClick}>
-													Continue with Google
-												</Button>
-											</div>
-										</>
-									)}
-									{/* END :: Social Login */}
+									<FormGroup
+										id='loginPassword'
+										className='col-lg-12 col-md-12'
+										label='Senha'>
+										<Input
+											type='password'
+											autoComplete='current-password'
+											className='bg-lightGrayFacit border-transparent text-grayRM'
+											value={formik.values.loginPassword}
+											isTouched={formik.touched.loginPassword}
+											invalidFeedback={formik.errors.loginPassword}
+											isValid={formik.isValid}
+											onChange={formik.handleChange}
+											onBlur={formik.handleBlur}
+										/>
+									</FormGroup>
+
+									<div className='col-12'>
+										<Button
+											color='warning'
+											className='w-100 py-3'
+											onClick={formik.handleSubmit}
+											isDisable={isLoading}>
+											{isLoading && <Spinner isSmall inButton isGrow />}
+											Login
+										</Button>
+									</div>
 								</form>
 							</CardBody>
 						</Card>
-						<div className='text-center'>
-							<a
-								href='/'
-								className={classNames('text-decoration-none me-3', {
-									'link-light': singUpStatus,
-									'link-dark': !singUpStatus,
-								})}>
-								Privacy policy
-							</a>
-							<a
-								href='/'
-								className={classNames('link-light text-decoration-none', {
-									'link-light': singUpStatus,
-									'link-dark': !singUpStatus,
-								})}>
-								Terms of use
-							</a>
-						</div>
 					</div>
 				</div>
 			</Page>
