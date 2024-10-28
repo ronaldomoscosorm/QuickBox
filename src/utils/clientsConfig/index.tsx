@@ -1,10 +1,10 @@
-import appLogo from 'src/assets/logos/logo-BB.png';
+import appLogo from 'src/assets/logos/logo-femsa.png';
 
 export const config = {
 	dataConfig: [
 		{
-			baseUrl: 'https://ams.amb.intranet.bb.com.br:8443/api',
-			baseUrlReport: 'https://ams.amb.intranet.bb.com.br:8443/api',
+			baseUrl: 'https://api.rmtecho.com.br/api',
+			baseUrlReport: 'https://api.rmtecho.com.br/api',
 			database: 'BIS',
 		},
 		{
