@@ -15,7 +15,8 @@ let Api: AxiosInstance;
 const ratio: number = 1;
 
 Api = axios.create({
-	baseURL: 'https://api.rmtecho.com.br/api',
+	baseURL: 'http://localhost:10112/api',
+	//baseURL: 'http://api.rmtecho.com.br/api',
 });
 
 const getAllProducts = (field: string, filter: string | null) =>

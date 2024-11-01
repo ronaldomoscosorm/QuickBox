@@ -3,8 +3,8 @@ import appLogo from 'src/assets/logos/logo-femsa.png';
 export const config = {
 	dataConfig: [
 		{
-			baseUrl: 'https://api.rmtecho.com.br/api',
-			baseUrlReport: 'https://api.rmtecho.com.br/api',
+			baseUrl: 'http://localhost:10112/api',
+			baseUrlReport: 'http://localhost:10112/api',
 			database: 'BIS',
 		},
 		{
